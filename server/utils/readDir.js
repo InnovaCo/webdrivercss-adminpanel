@@ -30,9 +30,11 @@ module.exports = function (start, callback) {
         }
 
         if(stat.isDirectory()) {
+          var structure;
 
-            listDirectory(start, function(err,structure) {
+          structure = getFilesFromDir(start, [".gz"])
 
+            listDirectory(start, function(err,legacy) {
                 if(structure.directories.length === 0) {
                     callback(null, {
                         repositories: []
@@ -81,6 +83,24 @@ module.exports = function (start, callback) {
         }
     });
 };
+
+function getFilesFromDir(dir, fileTypes) {
+  var filesToReturn = {"files": [], "directories": []};
+  function walkDir(currentPath) {
+    var files = fs.readdirSync(currentPath);
+    for (var i in files) {
+      var curFile = path.join(currentPath, files[i]);
+      if (fs.statSync(curFile).isFile() && fileTypes.indexOf(path.extname(curFile)) != -1) {
+        filesToReturn.files.push(curFile.replace(dir, '').replace(/\\/g, "/").replace("/", ""));
+        filesToReturn.directories.push(curFile.replace(dir, '').replace('.tar.gz', '').replace(/\\/g, "/").replace("/", ""));
+      } else if (fs.statSync(curFile).isDirectory()) {
+       walkDir(curFile);
+      }
+    }
+  };
+  walkDir(dir);
+  return filesToReturn;
+}
 
 listDirectory = function (start, cb) {
 

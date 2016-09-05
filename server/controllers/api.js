@@ -61,42 +61,23 @@ exports.getDirectoryList = function(req, res) {
 exports.getImage = function(req, res) {
 
     var processed = 0,
-        filepath;
+        filepath,
+        project = req.params.primaryNav;
 
-    /**
-     * read directory to check if hash matches given files
-     */
-    fs.readdir(imageRepo, function(err, files) {
-
-        if (err || files.length === 0) {
-            return res.send(404);
+        if (req.params.tertiaryNav) {
+          project = project + "\/" + req.params.secondaryNav + "\/" + req.params.tertiaryNav;
+        } else if (req.params.secondaryNav) {
+          project = project + "\/" + req.params.secondaryNav;
         }
-
-        files.forEach(function(file) {
-
-            /**
-             * continue if hash doesnt match url param
-             */
-            if (file !== req.params.project) {
-
-                /**
-                 * return 404 after all directories were checked
-                 */
-                if (++processed === files.length) {
-                    return res.send(404);
-                }
-
-                return true;
-            }
 
             /**
              * directory was found
              * generate file path
              */
             if (req.params.file) {
-                filepath = path.join(imageRepo, file, req.params.file);
+                filepath = path.join(imageRepo, project, req.params.file);
             } else {
-                filepath = path.join(imageRepo, file, 'diff', req.params.diff);
+                filepath = path.join(imageRepo, project, 'diff', req.params.diff);
             }
 
             /**
@@ -108,10 +89,6 @@ exports.getImage = function(req, res) {
                     return res.send(404);
                 }
             });
-
-        });
-
-    });
 
 };
 

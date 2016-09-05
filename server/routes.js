@@ -11,8 +11,12 @@ module.exports = function(app) {
     // Server API Routes
     app.route('/api/repositories').get(api.getDirectoryList);
     app.route('/api/repositories/:file').get(api.downloadRepository);
-    app.route('/api/repositories/:project/:file').get(api.getImage);
-    app.route('/api/repositories/:project/diff/:diff').get(api.getImage);
+    app.route('/api/repositories/:primaryNav/:file').get(api.getImage);
+    app.route('/api/repositories/:primaryNav/:secondaryNav/:file').get(api.getImage);
+    app.route('/api/repositories/:primaryNav/:secondaryNav/:tertiaryNav/:file').get(api.getImage);
+    app.route('/api/repositories/:primaryNav/diff/:diff').get(api.getImage);
+    app.route('/api/repositories/:primaryNav/:secondaryNav/diff/:diff').get(api.getImage);
+    app.route('/api/repositories/:primaryNav/:secondaryNav/:tertiaryNav/diff/:diff').get(api.getImage);
     app.route('/api/repositories/confirm').post(api.acceptDiff);
     app.route('/api/repositories/*').post(api.syncImages);
 
