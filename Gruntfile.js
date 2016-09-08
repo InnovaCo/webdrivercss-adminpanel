@@ -354,7 +354,8 @@ module.exports = function(grunt) {
                         'package.json',
                         'server.js',
                         'server/**/*',
-                        'repositories/**'
+                        'repositories/**',
+                        'tar/**'
                     ]
                 }]
             },

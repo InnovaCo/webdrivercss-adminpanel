@@ -171,54 +171,13 @@ exports.acceptDiff = function(req, res) {
         newFile = imageName + ".regression.png",
         currentFile = imageName + ".baseline.png",
         diffFile = imageName + ".diff.png",
-        project = null,
-        processed = 0;
+        project = req.body.project;
 
     /**
      * read directory to check if hash matches given files
      */
     async.waterfall([
-        /**
-         * get uploads dir filestructure
-         */
         function(done) {
-            return fs.readdir(imageRepo, done);
-        },
-        /**
-         * iterate through all files
-         */
-        function(files, done) {
-
-            if (files.length === 0) {
-                return done(404);
-            }
-
-            return files.forEach(function(file) {
-                return done(null, files, file);
-            });
-        },
-        /**
-         * check if directory matches with given hash and overwrite new file with current file
-         */
-        function(files, file, done) {
-
-            /**
-             * continue if hash doesnt match url param
-             */
-            if (file !== req.body.project) {
-
-                /**
-                 * return 404 after all directories were checked
-                 */
-                if (++processed === files.length) {
-                    return done(403);
-                }
-
-                return true;
-            }
-
-            project = file;
-
             var source = path.join(imageRepo, project, newFile),
                 dest = path.join(imageRepo, project, currentFile);
 
@@ -236,6 +195,62 @@ exports.acceptDiff = function(req, res) {
          */
         function(done) {
             return fs.remove(path.join(imageRepo, project, 'diff', diffFile), done);
+        }
+    ], function(err) {
+
+        if (err) {
+            return res.send(err);
+        }
+
+        res.send(200);
+
+    });
+
+};
+
+exports.removeImage = function(req, res) {
+
+    /*
+    The angular.js code still expects the new file to be suffixed '.new.png',
+    but it's actually '.regression.png in the repository.
+
+    We'll deal with this by assuming the .new.png in the file requested by the
+    client is actually .regression.png
+    */
+
+    var imageName = req.body.file.split(".remove.png")[0],
+        regressionFile = imageName + ".regression.png",
+        currentFile = imageName + ".baseline.png",
+        diffFile = imageName + ".diff.png",
+        project = req.body.project;
+
+    /**
+     * read directory to check if hash matches given files
+     */
+    async.waterfall([
+        /**
+         * remove refression file
+         */
+        function(done) {
+          if(fs.existsSync(path.join(imageRepo, project, regressionFile)) {
+            return fs.remove(path.join(imageRepo, project, regressionFile), done);
+          } else return done();
+        },
+        /**
+         * remove baseline file
+         */
+        function(done) {
+          if(fs.existsSync(path.join(imageRepo, project, 'diff', currentFile)) {
+            return fs.remove(path.join(imageRepo, project, 'diff', currentFile), done);
+          } else return done();
+        },
+        /**
+         * remove diff file
+         */
+        function(done) {
+          if(fs.existsSync(path.join(imageRepo, project, 'diff', diffFile)) {
+            return fs.remove(path.join(imageRepo, project, 'diff', diffFile), done);
+          } else return done();
         }
     ], function(err) {
 
