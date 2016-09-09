@@ -185,12 +185,50 @@ angular.module('webdrivercssAdminpanelApp').directive('imagediff', function($htt
                     url: '/api/repositories/confirm',
                     data: {
                         project: $scope.project,
-                        file: $scope.diff.replace(/diff/,'new')
+                        file: $scope.diff.replace(/diff/, 'new')
+                    }
+                }).success(function() {
+                    element.parents('.panel:eq(0)').toggleClass('shots').toggleClass('diffs');
+                    element.find('img').attr('src', '/api/repositories/' + $scope.project + '/' + $scope.diffImg.replace('diff', 'regression'));
+                    element.find('canvas, label, input').remove();
+                    element.find('.btn-success, .btn-warning').remove();
+                    $scope.toggleDiff = 1;
+                });
+
+            };
+
+            $scope.removeImages = function() {
+
+                $http({
+                    method: 'POST',
+                    url: '/api/repositories/removeImages',
+                    data: {
+                        project: $scope.project,
+                        file: $scope.diff.replace(/diff/, 'remove')
+                    }
+                }).success(function() {
+                    element.parents('.panel:eq(0)').remove();
+                    element.find('img').remove();
+                    element.find('canvas, .toggleDiff').remove();
+                    $scope.toggleDiff = 1;
+                });
+
+            };
+
+            $scope.denyChange = function() {
+
+                $http({
+                    method: 'POST',
+                    url: '/api/repositories/deny',
+                    data: {
+                        project: $scope.project,
+                        file: $scope.diff.replace(/diff/, 'deny')
                     }
                 }).success(function() {
                     element.parents('.panel:eq(0)').toggleClass('shots').toggleClass('diffs');
                     element.find('img').attr('src', '/api/repositories/' + $scope.project + '/' + $scope.diffImg.replace('diff', 'baseline'));
-                    element.find('canvas, .toggleDiff').remove();
+                    element.find('canvas, label, input').remove();
+                    element.find('.btn-success, .btn-warning').remove();
                     $scope.toggleDiff = 1;
                 });
 

@@ -6,15 +6,15 @@
 
 var fs = require('fs'),
     path = require('path'),
-    listDirectory;
+    listDirectory = require('./listDirectory');
 
 /**
  * get image repository information
- * @param  {String}   start    root path
+ * @param  {String}   tarDir    root path for tar.gz
+ * @param  {String}   imageDir  root path for images
  * @param  {Function} callback to return result
  */
-module.exports = function (start, callback) {
-
+module.exports = function(tarDir, imageDir, callback) {
     var processed = 0,
         projectCnt = 0,
         files = {
@@ -23,123 +23,90 @@ module.exports = function (start, callback) {
         };
 
     // Use lstat to resolve symlink if we are passed a symlink
-    fs.lstat(start, function(err, stat) {
+    fs.lstat(tarDir, function(err, stat) {
 
-        if(err) {
+        if (err) {
             return callback(err);
         }
+        if (stat.isDirectory()) {
+            var structure;
+            structure = getFilesFromDir(tarDir, [".gz"])
+            if (structure.directories.length === 0) {
+                return callback(null, {
+                    repositories: []
+                });
+            }
 
-        if(stat.isDirectory()) {
-          var structure;
-
-          structure = getFilesFromDir(start, [".gz"])
-
-            listDirectory(start, function(err,legacy) {
-                if(structure.directories.length === 0) {
-                    callback(null, {
-                        repositories: []
-                    });
+            structure.files = structure.files.filter(function(file) {
+                if (file[0] === '.') {
+                    return false;
                 }
 
-                structure.files = structure.files.filter(function(file) {
-                    if(file[0] === '.') {
-                        return false;
-                    }
+                return true;
+            });
 
-                    return true;
-                });
+            files.gz = structure.files;
+            projectCnt = structure.directories.length;
+            fs.lstat(imageDir, function(err, stat) {
 
-                files.gz = structure.files;
-                projectCnt = structure.directories.length;
-                structure.directories.forEach(function(dir) {
+                if (err) {
+                    return callback(err);
+                }
+                if (stat.isDirectory()) {
+                    structure.directories.forEach(function(dir) {
 
-                    files.repositories[dir] = {
-                        images: [],
-                        diffs: []
-                    };
+                        files.repositories[dir] = {
+                            images: [],
+                            diffs: []
+                        };
 
-                    // get project directory
-                    listDirectory(path.join(start,dir), function(err,structure) {
+                        // get project directory
+                        listDirectory(path.join(imageDir, dir), function(err, structure) {
 
-                        // save regression images
-                        files.repositories[dir].images = structure.files;
+                            // save regression images
+                            files.repositories[dir].images = structure.files;
 
-                        // get diffs
-                        listDirectory(path.join(start,dir,'diff'), function(err,structure) {
+                            // get diffs
+                            listDirectory(path.join(imageDir, dir, 'diff'), function(err, structure) {
 
-                            files.repositories[dir].diffs = structure.files;
+                                files.repositories[dir].diffs = structure.files;
 
-                            if(++processed === projectCnt) {
-                                callback(null,files);
-                            }
+                                if (++processed === projectCnt) {
+                                    console.log(files.repositories);
+                                    callback(null, files);
+                                }
+                            });
                         });
-
                     });
-                });
+                } else {
+                    return callback(new Error('path: ' + imageDir + ' is not a directory'));
+                }
             });
 
         } else {
-            return callback(new Error('path: ' + start + ' is not a directory'));
+            return callback(new Error('path: ' + tarDir + ' is not a directory'));
         }
     });
 };
 
 function getFilesFromDir(dir, fileTypes) {
-  var filesToReturn = {"files": [], "directories": []};
-  function walkDir(currentPath) {
-    var files = fs.readdirSync(currentPath);
-    for (var i in files) {
-      var curFile = path.join(currentPath, files[i]);
-      if (fs.statSync(curFile).isFile() && fileTypes.indexOf(path.extname(curFile)) != -1) {
-        filesToReturn.files.push(curFile.replace(dir, '').replace(/\\/g, "/").replace("/", ""));
-        filesToReturn.directories.push(curFile.replace(dir, '').replace('.tar.gz', '').replace(/\\/g, "/").replace("/", ""));
-      } else if (fs.statSync(curFile).isDirectory()) {
-       walkDir(curFile);
-      }
-    }
-  };
-  walkDir(dir);
-  return filesToReturn;
-}
-
-listDirectory = function (start, cb) {
-
-    var processed = 0,
-        ret = {
-        files: [],
-        directories: []
+    var filesToReturn = {
+        "files": [],
+        "directories": []
     };
 
-    fs.readdir(start, function(err, files) {
-
-        if(err) {
-            return cb(err);
+    function walkDir(currentPath) {
+        var files = fs.readdirSync(currentPath);
+        for (var i in files) {
+            var curFile = path.join(currentPath, files[i]);
+            if (fs.statSync(curFile).isFile() && fileTypes.indexOf(path.extname(curFile)) != -1) {
+                filesToReturn.files.push(curFile.replace(dir, '').replace(/\\/g, "/").replace("/", ""));
+                filesToReturn.directories.push(curFile.replace(dir, '').replace('.tar.gz', '').replace(/\\/g, "/").replace("/", ""));
+            } else if (fs.statSync(curFile).isDirectory()) {
+                walkDir(curFile);
+            }
         }
-
-        if(files.length === 0) {
-            cb(null,ret);
-        }
-
-        files.forEach(function(file) {
-
-            var abspath = path.join(start,file);
-            fs.stat(abspath,function(err,stat) {
-
-                if(err) {
-                    return cb(err);
-                }
-
-                if(stat.isDirectory()) {
-                    ret.directories.push(file);
-                } else {
-                    ret.files.push(file);
-                }
-
-                if(++processed === files.length) {
-                    cb(null,ret);
-                }
-
-            });
-        });
-    });
-};
+    };
+    walkDir(dir);
+    return filesToReturn;
+}

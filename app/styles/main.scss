@@ -23,6 +23,10 @@ body {
     padding-right: 15px;
 }
 
+.btn-xs {
+  margin-right: 12px
+}
+
 /* Custom page header */
 .header {
     border-bottom: 1px solid #e5e5e5;
@@ -113,6 +117,7 @@ imagediff {
 
     img {
         max-width: 100%;
+        margin-bottom: 4px;
     }
 }
 
