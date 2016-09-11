@@ -18,8 +18,9 @@ module.exports = function(app) {
     app.route('/api/repositories/:primaryNav/:secondaryNav/diff/:diff').get(api.getImage);
     app.route('/api/repositories/:primaryNav/:secondaryNav/:tertiaryNav/diff/:diff').get(api.getImage);
     app.route('/api/repositories/confirm').post(api.acceptDiff);
-    app.route('/api/repositories/removeImages').post(api.removeImages)
-    app.route('/api/repositories/deny').post(api.denyDiff)
+    app.route('/api/repositories/removeImages').post(api.removeImages);
+    app.route('/api/repositories/deny').post(api.denyDiff);
+    app.route('/api/repositories/deleteRepo').post(api.deleteRepo);
     app.route('/api/tar/*').post(api.syncImages);
 
     // All undefined api routes should return a 404

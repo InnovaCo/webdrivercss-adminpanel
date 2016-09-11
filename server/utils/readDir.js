@@ -72,7 +72,6 @@ module.exports = function(tarDir, imageDir, callback) {
                                 files.repositories[dir].diffs = structure.files;
 
                                 if (++processed === projectCnt) {
-                                    console.log(files.repositories);
                                     callback(null, files);
                                 }
                             });

@@ -36,10 +36,8 @@ exports.syncImages = function(req, res) {
                 throw err;
             }
 
-            if (fs.existsSync(path.join(tarDir, req.params[0]))) {
+            if (!fs.existsSync(path.join(tarDir, req.params[0]))) {
                 rimraf.sync(path.join(tarDir, req.params[0]));
-                fs.mkdirsSync(path.join(tarDir, req.params[0]), '0755', true);
-            } else {
                 fs.mkdirsSync(path.join(tarDir, req.params[0]), '0755', true);
             }
 
@@ -283,6 +281,51 @@ exports.removeImages = function(req, res) {
         });
 
 };
+
+
+exports.deleteRepo = function(req, res) {
+
+    /*
+    The angular.js code still expects the new file to be suffixed '.new.png',
+    but it's actually '.regression.png in the repository.
+
+    We'll deal with this by assuming the .new.png in the file requested by the
+    client is actually .regression.png
+    */
+
+    var project = req.body.project;
+    /**
+     * read directory to check if hash matches given files
+     */
+    async.waterfall([
+            /**
+             * remove regression file
+             */
+            function(done) {
+                if (fs.existsSync(path.join(imageDir, project))) {
+                    rimraf.sync(path.join(imageDir, project));
+                    return done();
+                } else return res.send(404);
+            },
+            /**
+             * remove tar if all screenshots were deleted
+             */
+            function(done) {
+                return fs.remove(path.join(tarDir, project + ".tar.gz"), done);
+            }
+        ],
+        function(err) {
+
+            if (err) {
+                return res.send(err);
+            }
+
+            res.send(200);
+
+        });
+
+};
+
 
 exports.denyDiff = function(req, res) {
 
