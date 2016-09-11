@@ -70,19 +70,23 @@ By default, the application provides the following API interfaces:
   }
   ```
 
-* GET `/api/repositories/:file` (`"Content-Type": "application/octet-stream"`)<br>
+* GET `/api/tar/*` (`"Content-Type": "application/octet-stream"`)<br>
   Returns the image repository tarball.
 
   **Example Request:**<br>
-  `http://localhost:9000/api/repositories/amoeba-example.tar.gz`
+  `http://localhost:9000/api/tar/amoeba-example/amoeba-example.tar.gz`
 
-* GET `/api/repositories/:project/:file` (`"Content-Type": "image/png"`)<br>
+* GET `/api/repositories/:primaryNav/:file` (`"Content-Type": "image/png"`)<br>
+  GET `/api/repositories/:primaryNav/:secondaryNav/:file'` (`"Content-Type": "image/png"`)<br>
+  GET `/api/repositories/:primaryNav/:secondaryNav/:tertiaryNav/:file'` (`"Content-Type": "image/png"`)<br>
   Get a current or new image from a specific repository.
 
   **Example Request:**<br>
   `http://localhost:9000/api/repositories/amoeba-example/contact.baseline.png`
 
-* GET `/api/repositories/:project/diff/:diff` (`"Content-Type": "image/png"`)<br>
+* GET `/api/repositories/:primaryNav/diff/:diff` (`"Content-Type": "image/png"`)<br>
+  GET `/api/repositories/:primaryNav/:secondaryNav/diff/:diff` (`"Content-Type": "image/png"`)<br>
+  GET `/api/repositories/:primaryNav/:secondaryNav/:tertiaryNav/diff/:diff` (`"Content-Type": "image/png"`)<br>
   Get diff image of a specific repository.
 
   **Example Request:**<br>
@@ -97,15 +101,45 @@ By default, the application provides the following API interfaces:
   `http://localhost:9000/api/repositories/confirm`
 
   **JSON Parameters:**<br>
-    `file`    - `{String}`  *filename of new file*<br>
+    `file`    - `{String}`  *filename of new file (file name must have .new.png on the end)*<br>
     `project` - `{String}`  *project name*
 
-* POST `/api/repositories/*` (`"Accept": "application/octed-stream"`)<br>
+* POST `/api/repositories/removeImages` (`"Accept": "application/json"`)<br>
+  Delete all (baseline, regression, diff) images with same name.
+
+  **Example Request:**<br>
+  `http://localhost:9000/api/repositories/removeImages`
+
+  **JSON Parameters:**<br>
+    `file`    - `{String}`  *filename of new file (file name must have .remove.png on the end)*<br>
+    `project` - `{String}`  *project name*
+
+* POST `/api/repositories/deny` (`"Accept": "application/json"`)<br>
+  Deny image diff.
+
+  **Example Request:**<br>
+  `http://localhost:9000/api/repositories/deny`
+
+  **JSON Parameters:**<br>
+    `file`    - `{String}`  *filename of new file (file name must have .deny.png on the end)*<br>
+    `project` - `{String}`  *project name*
+
+
+* POST `/api/repositories/deny` (`"Accept": "application/json"`)<br>
+  Delete all images and repo itself.
+
+  **Example Request:**<br>
+  `http://localhost:9000/api/repositories/deleteRepo`
+
+  **JSON Parameters:**<br>
+    `project` - `{String}`  *project name*
+
+* POST `/api/tar/*` (`"Accept": "application/octed-stream"`)<br>
   Takes an image repository tarball (`tar.gz`),
   unzips it, and saves it to the file system.
 
   **Example Request:**<br>
-  `http://localhost:9000/api/repositories/amoeba-example.tar.gz`
+  `http://localhost:9000/api/tar/amoeba-example/amoeba-example.tar.gz`
 
   **JSON Parameters:**<br>
     `gz` - `{Object}`  *repository tarbal*
@@ -131,7 +165,7 @@ var client = WebdriverIO.remote({
 // init webdrivercss
 WebdriverCSS.init(client, {
     screenshotRoot: 'myProject',
-    api: 'http://localhost:9000/api/repositories/'
+    api: 'http://localhost:9000/api/tar/'
 });
 
 client
