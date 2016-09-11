@@ -230,6 +230,7 @@ exports.removeImages = function(req, res) {
         regressionFile = imageName + ".regression.png",
         currentFile = imageName + ".baseline.png",
         diffFile = imageName + ".diff.png",
+        normalFile = imageName + ".png",
         project = req.body.project;
     /**
      * read directory to check if hash matches given files
@@ -257,6 +258,14 @@ exports.removeImages = function(req, res) {
             function(done) {
                 if (fs.existsSync(path.join(imageDir, project, 'diff', diffFile))) {
                     return fs.remove(path.join(imageDir, project, 'diff', diffFile), done);
+                } else return done();
+            },
+            /**
+             * remove normal file if exists
+             */
+            function(done) {
+                if (fs.existsSync(path.join(imageDir, project, normalFile))) {
+                    return fs.remove(path.join(imageDir, project, normalFile), done);
                 } else return done();
             },
             /**
