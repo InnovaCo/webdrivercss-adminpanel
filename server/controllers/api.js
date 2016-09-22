@@ -23,30 +23,31 @@ var fs = require('fs-extra'),
 
 
 exports.syncImages = function(req, res) {
-
     if (!req.files) {
         return res.send(500);
     }
 
     fs.readFile(req.files.gz.path, function(err, data) {
-        var newPath = path.join(tarDir, req.params[0], req.files.gz.name);
+        var tarPath = path.join(tarDir, req.params[0] + ".tar.gz");
+        var imagePath = path.join(imageDir, req.params[0]);
+        var imageExtract = imagePath.substring(0, imagePath.lastIndexOf("\\"))
 
-        fs.remove(newPath.replace(/\.tar\.gz/, ''), function(err) {
+        fs.remove(tarPath, function(err) {
             if (err) {
                 throw err;
             }
 
-            if (!fs.existsSync(path.join(tarDir, req.params[0]))) {
-                rimraf.sync(path.join(tarDir, req.params[0]));
-                fs.mkdirsSync(path.join(tarDir, req.params[0]), '0755', true);
+            if (fs.existsSync(imagePath)) {
+                rimraf.sync(imagePath);
+                fs.mkdirsSync(imagePath, '0755', true);
             }
 
-            fs.writeFile(newPath, data, function(err) {
+            fs.writeFile(tarPath, data, function(err) {
                 if (err) {
                     throw (err);
                 }
 
-                new targz().extract(newPath, path.join(imageDir, req.params[0]));
+                new targz().extract(tarPath, imageExtract);
                 res.send(200);
             });
 
@@ -102,10 +103,10 @@ exports.getImage = function(req, res) {
 };
 
 exports.downloadRepository = function(req, res) {
-
     var file = req.params[0],
         project = file.replace(/\.tar\.gz/, ''),
-        tmpPath = path.join(__dirname, '..', '..', '.tmp', 'webdrivercss-adminpanel', project).replace(/\\/g, "/"),
+        date = new Date().getTime().toString(),
+        tmpPath = path.join(__dirname, '..', '..', '.tmp', date, 'webdrivercss-adminpanel', project).replace(/\\/g, "/"),
         tarPath = tmpPath + '.tar.gz',
         projectPath = path.join(imageDir, project).replace(/\\/g, "/");
     /**
@@ -115,6 +116,7 @@ exports.downloadRepository = function(req, res) {
         /**
          * check if project exists
          */
+
         function(done) {
             return fs.exists(projectPath, done.bind(this, null));
         },
@@ -126,7 +128,7 @@ exports.downloadRepository = function(req, res) {
                 return res.send(404);
             }
 
-            return glob(projectPath + '/**/*.baseline.png', done);
+            return glob(projectPath + '/*.baseline.png', done);
         },
         /**
          * copy these files
