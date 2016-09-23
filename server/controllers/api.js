@@ -28,26 +28,33 @@ exports.syncImages = function(req, res) {
     }
 
     fs.readFile(req.files.gz.path, function(err, data) {
-        var tarPath = path.join(tarDir, req.params[0] + ".tar.gz");
+        var tarPath = path.join(tarDir, req.params[0]);
         var imagePath = path.join(imageDir, req.params[0]);
         var imageExtract = imagePath.substring(0, imagePath.lastIndexOf("\\"))
+        var tarFolder = tarPath.substring(0, tarPath.lastIndexOf("\\"))
 
         fs.remove(tarPath, function(err) {
             if (err) {
                 throw err;
             }
 
-            if (fs.existsSync(imagePath)) {
+            if (!fs.existsSync(imagePath)) {
                 rimraf.sync(imagePath);
+                fs.mkdirsSync(imagePath, '0755', true);
+            } else {
                 fs.mkdirsSync(imagePath, '0755', true);
             }
 
-            fs.writeFile(tarPath, data, function(err) {
+            if (!fs.existsSync(tarFolder)) {
+                fs.mkdirsSync(tarFolder, '0755', true);
+            }
+
+            fs.writeFile(tarPath + ".tar.gz", data, function(err) {
                 if (err) {
                     throw (err);
                 }
 
-                new targz().extract(tarPath, imageExtract);
+                new targz().extract(tarPath + ".tar.gz", imageExtract);
                 res.send(200);
             });
 
