@@ -13,31 +13,48 @@
 var fs = require('fs-extra'),
     path = require('path'),
     glob = require('glob'),
+    rimraf = require('rimraf'),
     targz = require('tar.gz'),
     async = require('async'),
     readDir = require('../utils/readDir'),
-    imageRepo = path.join(__dirname, '..', '..', '..', 'repositories');
+    imageDir = path.join(__dirname, '..', '..', '..', 'repositories'),
+    tarDir = path.join(__dirname, '..', '..', '..', 'tar'),
+    listDirectory = require('../utils/listDirectory');
+
 
 exports.syncImages = function(req, res) {
-
     if (!req.files) {
         return res.send(500);
     }
 
     fs.readFile(req.files.gz.path, function(err, data) {
-        var newPath = path.join(imageRepo, req.files.gz.name);
+        var tarPath = path.join(tarDir, req.params[0]);
+        var imagePath = path.join(imageDir, req.params[0]);
+        var imageExtract = imagePath.substring(0, imagePath.lastIndexOf("\\"))
+        var tarFolder = tarPath.substring(0, tarPath.lastIndexOf("\\"))
 
-        fs.remove(newPath.replace(/\.tar\.gz/, ''), function(err) {
+        fs.remove(tarPath, function(err) {
             if (err) {
                 throw err;
             }
 
-            fs.writeFile(newPath, data, function(err) {
+            if (!fs.existsSync(imagePath)) {
+                rimraf.sync(imagePath);
+                fs.mkdirsSync(imagePath, '0755', true);
+            } else {
+                fs.mkdirsSync(imagePath, '0755', true);
+            }
+
+            if (!fs.existsSync(tarFolder)) {
+                fs.mkdirsSync(tarFolder, '0755', true);
+            }
+
+            fs.writeFile(tarPath + ".tar.gz", data, function(err) {
                 if (err) {
                     throw (err);
                 }
 
-                new targz().extract(newPath, imageRepo);
+                new targz().extract(tarPath + ".tar.gz", imageExtract);
                 res.send(200);
             });
 
@@ -48,7 +65,7 @@ exports.syncImages = function(req, res) {
 
 exports.getDirectoryList = function(req, res) {
 
-    readDir(imageRepo, function(err, list) {
+    readDir(tarDir, imageDir, function(err, list) {
         if (err) {
             throw err;
         }
@@ -61,68 +78,44 @@ exports.getDirectoryList = function(req, res) {
 exports.getImage = function(req, res) {
 
     var processed = 0,
-        filepath;
+        filepath,
+        project = req.params.primaryNav;
+
+    if (req.params.tertiaryNav) {
+        project = project + "\/" + req.params.secondaryNav + "\/" + req.params.tertiaryNav;
+    } else if (req.params.secondaryNav) {
+        project = project + "\/" + req.params.secondaryNav;
+    }
 
     /**
-     * read directory to check if hash matches given files
+     * directory was found
+     * generate file path
      */
-    fs.readdir(imageRepo, function(err, files) {
+    if (req.params.file) {
+        filepath = path.join(imageDir, project, req.params.file);
+    } else {
+        filepath = path.join(imageDir, project, 'diff', req.params.diff);
+    }
 
-        if (err || files.length === 0) {
+    /**
+     * check if requested file exists
+     * return 404 if file doesn't exist otherwise send file content
+     */
+    res.sendfile(filepath, {}, function(err) {
+        if (err) {
             return res.send(404);
         }
-
-        files.forEach(function(file) {
-
-            /**
-             * continue if hash doesnt match url param
-             */
-            if (file !== req.params.project) {
-
-                /**
-                 * return 404 after all directories were checked
-                 */
-                if (++processed === files.length) {
-                    return res.send(404);
-                }
-
-                return true;
-            }
-
-            /**
-             * directory was found
-             * generate file path
-             */
-            if (req.params.file) {
-                filepath = path.join(imageRepo, file, req.params.file);
-            } else {
-                filepath = path.join(imageRepo, file, 'diff', req.params.diff);
-            }
-
-            /**
-             * check if requested file exists
-             * return 404 if file doesn't exist otherwise send file content
-             */
-            res.sendfile(filepath, {}, function(err) {
-                if (err) {
-                    return res.send(404);
-                }
-            });
-
-        });
-
     });
 
 };
 
 exports.downloadRepository = function(req, res) {
-
-    var file = req.params.file,
+    var file = req.params[0],
         project = file.replace(/\.tar\.gz/, ''),
-        tmpPath = path.join(__dirname, '..', '..', '.tmp', 'webdrivercss-adminpanel' , project),
+        date = new Date().getTime().toString(),
+        tmpPath = path.join(__dirname, '..', '..', '.tmp', date, 'webdrivercss-adminpanel', project).replace(/\\/g, "/"),
         tarPath = tmpPath + '.tar.gz',
-        projectPath = path.join(imageRepo, project);
-
+        projectPath = path.join(imageDir, project).replace(/\\/g, "/");
     /**
      * create tmp directory and create tarball to download on the fly
      */
@@ -130,6 +123,7 @@ exports.downloadRepository = function(req, res) {
         /**
          * check if project exists
          */
+
         function(done) {
             return fs.exists(projectPath, done.bind(this, null));
         },
@@ -141,7 +135,7 @@ exports.downloadRepository = function(req, res) {
                 return res.send(404);
             }
 
-            return glob(projectPath + '/**/*.baseline.png', done);
+            return glob(projectPath + '/*.baseline.png', done);
         },
         /**
          * copy these files
@@ -194,56 +188,15 @@ exports.acceptDiff = function(req, res) {
         newFile = imageName + ".regression.png",
         currentFile = imageName + ".baseline.png",
         diffFile = imageName + ".diff.png",
-        project = null,
-        processed = 0;
+        project = req.body.project;
 
     /**
      * read directory to check if hash matches given files
      */
     async.waterfall([
-        /**
-         * get uploads dir filestructure
-         */
         function(done) {
-            return fs.readdir(imageRepo, done);
-        },
-        /**
-         * iterate through all files
-         */
-        function(files, done) {
-
-            if (files.length === 0) {
-                return done(404);
-            }
-
-            return files.forEach(function(file) {
-                return done(null, files, file);
-            });
-        },
-        /**
-         * check if directory matches with given hash and overwrite new file with current file
-         */
-        function(files, file, done) {
-
-            /**
-             * continue if hash doesnt match url param
-             */
-            if (file !== req.body.project) {
-
-                /**
-                 * return 404 after all directories were checked
-                 */
-                if (++processed === files.length) {
-                    return done(403);
-                }
-
-                return true;
-            }
-
-            project = file;
-
-            var source = path.join(imageRepo, project, newFile),
-                dest = path.join(imageRepo, project, currentFile);
+            var source = path.join(imageDir, project, newFile),
+                dest = path.join(imageDir, project, currentFile);
 
             return fs.copy(source, dest, done);
 
@@ -252,13 +205,179 @@ exports.acceptDiff = function(req, res) {
          * remove obsolete new.png file
          */
         function(done) {
-            return fs.remove(path.join(imageRepo, project, newFile), done);
+            return fs.remove(path.join(imageDir, project, newFile), done);
         },
         /**
          * remove diff file
          */
         function(done) {
-            return fs.remove(path.join(imageRepo, project, 'diff', diffFile), done);
+            return fs.remove(path.join(imageDir, project, 'diff', diffFile), done);
+        }
+    ], function(err) {
+
+        if (err) {
+            return res.send(err);
+        }
+
+        res.send(200);
+
+    });
+
+};
+
+exports.removeImages = function(req, res) {
+
+    /*
+    The angular.js code still expects the new file to be suffixed '.new.png',
+    but it's actually '.regression.png in the repository.
+
+    We'll deal with this by assuming the .new.png in the file requested by the
+    client is actually .regression.png
+    */
+
+    var imageName = req.body.file.split(".remove.png")[0],
+        regressionFile = imageName + ".regression.png",
+        currentFile = imageName + ".baseline.png",
+        diffFile = imageName + ".diff.png",
+        normalFile = imageName + ".png",
+        project = req.body.project;
+    /**
+     * read directory to check if hash matches given files
+     */
+    async.waterfall([
+            /**
+             * remove refression file
+             */
+            function(done) {
+                if (fs.existsSync(path.join(imageDir, project, regressionFile))) {
+                    return fs.remove(path.join(imageDir, project, regressionFile), done);
+                } else return done();
+            },
+            /**
+             * remove baseline file
+             */
+            function(done) {
+                if (fs.existsSync(path.join(imageDir, project, currentFile))) {
+                    return fs.remove(path.join(imageDir, project, currentFile), done);
+                } else return done();
+            },
+            /**
+             * remove diff file
+             */
+            function(done) {
+                if (fs.existsSync(path.join(imageDir, project, 'diff', diffFile))) {
+                    return fs.remove(path.join(imageDir, project, 'diff', diffFile), done);
+                } else return done();
+            },
+            /**
+             * remove normal file if exists
+             */
+            function(done) {
+                if (fs.existsSync(path.join(imageDir, project, normalFile))) {
+                    return fs.remove(path.join(imageDir, project, normalFile), done);
+                } else return done();
+            },
+            /**
+             * remove tar if all screenshots were deleted
+             */
+            function(done) {
+                listDirectory(path.join(imageDir, project), function(err, structure) {
+                    if (structure.files.length === 0) {
+                        return fs.remove(path.join(tarDir, project + ".tar.gz"), done);
+                    } else return done();
+                });
+            }
+        ],
+        function(err) {
+
+            if (err) {
+                return res.send(err);
+            }
+
+            res.send(200);
+
+        });
+
+};
+
+
+exports.deleteRepo = function(req, res) {
+
+    /*
+    The angular.js code still expects the new file to be suffixed '.new.png',
+    but it's actually '.regression.png in the repository.
+
+    We'll deal with this by assuming the .new.png in the file requested by the
+    client is actually .regression.png
+    */
+
+    var project = req.body.project;
+    /**
+     * read directory to check if hash matches given files
+     */
+    async.waterfall([
+            /**
+             * remove regression file
+             */
+            function(done) {
+                if (fs.existsSync(path.join(imageDir, project))) {
+                    rimraf.sync(path.join(imageDir, project));
+                    return done();
+                } else return res.send(404);
+            },
+            /**
+             * remove tar if all screenshots were deleted
+             */
+            function(done) {
+                return fs.remove(path.join(tarDir, project + ".tar.gz"), done);
+            }
+        ],
+        function(err) {
+
+            if (err) {
+                return res.send(err);
+            }
+
+            res.send(200);
+
+        });
+
+};
+
+
+exports.denyDiff = function(req, res) {
+
+    /*
+    The angular.js code still expects the new file to be suffixed '.new.png',
+    but it's actually '.regression.png in the repository.
+
+    We'll deal with this by assuming the .new.png in the file requested by the
+    client is actually .regression.png
+    */
+
+    var imageName = req.body.file.split(".deny.png")[0],
+        regressionFile = imageName + ".regression.png",
+        diffFile = imageName + ".diff.png",
+        project = req.body.project;
+    /**
+     * read directory to check if hash matches given files
+     */
+    async.waterfall([
+        /**
+         * remove refression file
+         */
+        function(done) {
+            if (fs.existsSync(path.join(imageDir, project, regressionFile))) {
+                return fs.remove(path.join(imageDir, project, regressionFile), done);
+            } else return done();
+        },
+        /**
+         * remove diff file
+         */
+        function(done) {
+            if (fs.existsSync(path.join(imageDir, project, 'diff', diffFile))) {
+                return fs.remove(path.join(imageDir, project, 'diff', diffFile), done);
+            } else return done();
         }
     ], function(err) {
 

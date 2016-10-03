@@ -15,6 +15,7 @@
                     </ul>
                 </li>
             </ul>
+              <deleterepo diff="diff" project="dir" />
         </div>
     </div>
 
@@ -38,7 +39,7 @@
         <h3 class="panel-title">{{ shot.split('.').slice(0,-1).join(' ') }}</h3>
     </div>
     <div class="panel-body">
-        <img ng-src="/api/repositories/{{ dir }}/{{ shot }}" alt="{{ shot }}">
+        <imagenormal shot="shot" project="dir" />
     </div>
 </div>
 
@@ -78,7 +79,7 @@ var client = WebdriverIO.remote({
 
 WebdriverCSS.init(client, {
     screenshotRoot: '{{ projectname || "myProject" }}',
-    api: '{{ api }}'
+    api: '{{ apiForDownload }}'
 });
 
 client

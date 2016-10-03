@@ -12,7 +12,15 @@ angular.module('webdrivercssAdminpanelApp', [
         templateUrl: 'partials/main',
         controller: 'MainCtrl',
         resolve: { repositories: 'ImageRepository' }
-    }).when('/regression-tests/:id', {
+    }).when('/regression-tests/:primaryNav', {
+        templateUrl: 'partials/main',
+        controller: 'MainCtrl',
+        resolve: { repositories: 'ImageRepository' }
+    }).when('/regression-tests/:primaryNav/:secondaryNav', {
+        templateUrl: 'partials/main',
+        controller: 'MainCtrl',
+        resolve: { repositories: 'ImageRepository' }
+    }).when('/regression-tests/:primaryNav/:secondaryNav/:tertiaryNav', {
         templateUrl: 'partials/main',
         controller: 'MainCtrl',
         resolve: { repositories: 'ImageRepository' }
