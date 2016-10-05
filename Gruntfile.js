@@ -116,7 +116,14 @@ module.exports = function(grunt) {
                 src: ['test/client/spec/{,*/}*.js']
             }
         },
-
+        shell: {
+            runPm2: {
+                command: 'pm2 start process.json --env production'
+            },
+            stopPm2: {
+                command: 'pm2 delete process.json'
+            }
+        },
         // Empties folders to start fresh
         clean: {
             dist: {
@@ -503,6 +510,14 @@ module.exports = function(grunt) {
                 'test:client'
             ]);
         }
+    });
+
+    grunt.registerTask('start', function(target) {
+        grunt.task.run(['build', 'shell:runPm2']);
+    });
+
+    grunt.registerTask('stop', function(target) {
+        grunt.task.run(['shell:stopPm2']);
     });
 
     grunt.registerTask('build', [
