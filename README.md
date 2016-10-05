@@ -30,6 +30,11 @@ $ git clone git@github.com:webdriverio/webdrivercss-adminpanel.git
 $ cd webdrivercss-adminpanel
 ```
 
+Install pm2 to launch in daemon
+```sh
+$ npm install pm2 -g
+```
+
 Then download all client and server-side dependencies:
 
 ```sh
@@ -40,6 +45,11 @@ Last but not least start the application by running:
 
 ```sh
 $ grunt serve:dist
+```
+
+To run in daemon
+```sh
+$ grunt start
 ```
 
 This command minifies all stylesheets and scripts and starts the application on [localhost:9000](http://localhost:9000).
