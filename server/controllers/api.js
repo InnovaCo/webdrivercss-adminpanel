@@ -17,8 +17,9 @@ var fs = require('fs-extra'),
     targz = require('tar.gz'),
     async = require('async'),
     readDir = require('../utils/readDir'),
-    imageDir = path.join(__dirname, '..', '..', '..', 'repositories'),
-    tarDir = path.join(__dirname, '..', '..', '..', 'tar'),
+    config = require('../config/config'),
+    imageDir = path.join(config.screenshotsRoot, '..', '..', '..', 'repositories'),
+    tarDir = path.join(config.screenshotsRoot, '..', '..', '..', 'tar'),
     listDirectory = require('../utils/listDirectory');
 
 
@@ -64,7 +65,6 @@ exports.syncImages = function(req, res) {
 };
 
 exports.getDirectoryList = function(req, res) {
-
     readDir(tarDir, imageDir, function(err, list) {
         if (err) {
             throw err;
