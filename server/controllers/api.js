@@ -18,8 +18,8 @@ var fs = require('fs-extra'),
     async = require('async'),
     readDir = require('../utils/readDir'),
     config = require('../config/config'),
-    imageDir = path.join(config.screenshotsRoot, '..', '..', '..', 'repositories'),
-    tarDir = path.join(config.screenshotsRoot, '..', '..', '..', 'tar'),
+    imageDir = path.join(config.screenshotsRoot, 'repositories'),
+    tarDir = path.join(config.screenshotsRoot, 'tar'),
     listDirectory = require('../utils/listDirectory');
 
 
