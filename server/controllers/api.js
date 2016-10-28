@@ -18,8 +18,8 @@ var fs = require('fs-extra'),
     async = require('async'),
     readDir = require('../utils/readDir'),
     config = require('../config/config'),
-    imageDir = path.join(config.screenshotsRoot, 'repositories'),
-    tarDir = path.join(config.screenshotsRoot, 'tar'),
+    imageDir = path.join(config.screenshotsRoot, 'repositories').replace(/\\/g, "/"),
+    tarDir = path.join(config.screenshotsRoot, 'tar').replace(/\\/g, "/"),
     listDirectory = require('../utils/listDirectory');
 
 
@@ -31,8 +31,8 @@ exports.syncImages = function(req, res) {
     fs.readFile(req.files.gz.path, function(err, data) {
         var tarPath = path.join(tarDir, req.params[0]);
         var imagePath = path.join(imageDir, req.params[0]);
-        var imageExtract = imagePath.substring(0, imagePath.lastIndexOf("\\"))
-        var tarFolder = tarPath.substring(0, tarPath.lastIndexOf("\\"))
+        var imageExtract = imagePath.substring(0, imagePath.lastIndexOf("/"))
+        var tarFolder = tarPath.substring(0, tarPath.lastIndexOf("/"))
         console.log("TarPath: " + tarPath);
         console.log("ImagePath: " + imagePath);
         console.log("ImageExtract: " + imageExtract);
