@@ -14,5 +14,6 @@ module.exports = {
                 safe: true
             }
         }
-    }
+    },
+    screenshotsRoot: __dirname
 };

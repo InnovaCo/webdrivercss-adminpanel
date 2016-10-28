@@ -17,8 +17,9 @@ var fs = require('fs-extra'),
     targz = require('tar.gz'),
     async = require('async'),
     readDir = require('../utils/readDir'),
-    imageDir = path.join(__dirname, '..', '..', '..', 'repositories'),
-    tarDir = path.join(__dirname, '..', '..', '..', 'tar'),
+    config = require('../config/config'),
+    imageDir = path.join(config.screenshotsRoot, 'repositories').replace(/\\/g, "/"),
+    tarDir = path.join(config.screenshotsRoot, 'tar').replace(/\\/g, "/"),
     listDirectory = require('../utils/listDirectory');
 
 
@@ -30,30 +31,39 @@ exports.syncImages = function(req, res) {
     fs.readFile(req.files.gz.path, function(err, data) {
         var tarPath = path.join(tarDir, req.params[0]);
         var imagePath = path.join(imageDir, req.params[0]);
-        var imageExtract = imagePath.substring(0, imagePath.lastIndexOf("\\"))
-        var tarFolder = tarPath.substring(0, tarPath.lastIndexOf("\\"))
+        var imageExtract = imagePath.substring(0, imagePath.lastIndexOf("/"))
+        var tarFolder = tarPath.substring(0, tarPath.lastIndexOf("/"))
+        console.log("TarPath: " + tarPath);
+        console.log("ImagePath: " + imagePath);
+        console.log("ImageExtract: " + imageExtract);
+        console.log("tarFolder: " + tarFolder);
 
         fs.remove(tarPath, function(err) {
             if (err) {
+                console.log("remove tarPath throw error");
                 throw err;
             }
-
+            console.log("remove tarPath complete");
             if (!fs.existsSync(imagePath)) {
+                console.log("existsSync imagePath true");
                 rimraf.sync(imagePath);
                 fs.mkdirsSync(imagePath, '0755', true);
             } else {
+                console.log("existsSync imagePath false");
                 fs.mkdirsSync(imagePath, '0755', true);
             }
 
             if (!fs.existsSync(tarFolder)) {
+                console.log("existsSync tarFolder true");
                 fs.mkdirsSync(tarFolder, '0755', true);
             }
 
             fs.writeFile(tarPath + ".tar.gz", data, function(err) {
                 if (err) {
+                    console.log("writeFile failed");
                     throw (err);
                 }
-
+                console.log("writefile success");
                 new targz().extract(tarPath + ".tar.gz", imageExtract);
                 res.send(200);
             });
@@ -64,7 +74,6 @@ exports.syncImages = function(req, res) {
 };
 
 exports.getDirectoryList = function(req, res) {
-
     readDir(tarDir, imageDir, function(err, list) {
         if (err) {
             throw err;
