@@ -1,0 +1,17 @@
+info:
+  name: webdrivercss-adminpanel
+  version: "1.0"
+  owner:
+    name: Andrey Pshenkin
+    email: andrey.pshenkin@inn.ru
+
+include:
+  - file: /etc/serve/include.d/debian-tools.yml
+
+build:
+  - debian:
+      daemon: "$APPLICATION_PATH/bin/start"
+
+deploy:
+  - debian:
+      cluster: webdriver1-ti.msk.inn.ru
