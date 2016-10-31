@@ -59,7 +59,6 @@ module.exports = function(tarDir, imageDir, callback) {
                             images: [],
                             diffs: []
                         };
-
                         // get project directory
                         listDirectory(path.join(imageDir, dir), function(err, structure) {
 
@@ -97,7 +96,7 @@ function getFilesFromDir(dir, fileTypes) {
     function walkDir(currentPath) {
         var files = fs.readdirSync(currentPath);
         for (var i in files) {
-            var curFile = path.join(currentPath, files[i]);
+            var curFile = path.join(currentPath, files[i]).replace(/\\/g, "/");
             if (fs.statSync(curFile).isFile() && fileTypes.indexOf(path.extname(curFile)) != -1) {
                 filesToReturn.files.push(curFile.replace(dir, '').replace(/\\/g, "/").replace("/", ""));
                 filesToReturn.directories.push(curFile.replace(dir, '').replace('.tar.gz', '').replace(/\\/g, "/").replace("/", ""));
