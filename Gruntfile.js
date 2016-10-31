@@ -26,7 +26,7 @@ module.exports = function(grunt) {
         },
         express: {
             options: {
-                port: process.env.PORT || 9000
+                port: process.env.PORT || 8080
             },
             dev: {
                 options: {
@@ -465,7 +465,7 @@ module.exports = function(grunt) {
 
     grunt.registerTask('serve', function(target) {
         if (target === 'dist') {
-            return grunt.task.run(['build', 'express:prod', 'open', 'express-keepalive']);
+            return grunt.task.run(['build', 'express:prod', 'express-keepalive']);
         }
 
         if (target === 'debug') {
