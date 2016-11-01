@@ -9,4 +9,4 @@ ls -la .
 
 echo "Helo, world!"
 
-npm install
+su innova -s /bin/bash -c "npm install"
