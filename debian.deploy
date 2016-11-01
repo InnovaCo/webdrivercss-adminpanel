@@ -10,3 +10,4 @@ ls -la .
 echo "Helo, world!"
 
 npm install
+bower install
