@@ -54,7 +54,9 @@ exports.syncImages = function(req, res) {
                 if (err) {
                     throw (err);
                 }
-                new targz().extract(tarPath + ".tar.gz", imageExtract);
+                console.log(tarPath + ".tar.gz");
+                console.log(imageExtract);
+                new targz().extract(path.resolve(tarPath + ".tar.gz"), path.resolve(imageExtract));
                 res.send(200);
             });
 
