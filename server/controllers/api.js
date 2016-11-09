@@ -55,8 +55,6 @@ exports.syncImages = function(req, res) {
                 if (err) {
                     throw (err);
                 }
-                console.log(tarPath + ".tar.gz");
-                console.log(imageExtract);
                 targznorm.decompress({
                     src: path.resolve(tarPath + ".tar.gz"),
                     dest: path.resolve(imageExtract),
