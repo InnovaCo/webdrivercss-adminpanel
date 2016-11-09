@@ -15,6 +15,7 @@ var fs = require('fs-extra'),
     glob = require('glob'),
     rimraf = require('rimraf'),
     targz = require('tar.gz'),
+    targznorm = require('targz'),
     async = require('async'),
     readDir = require('../utils/readDir'),
     config = require('../config/config'),
@@ -56,8 +57,21 @@ exports.syncImages = function(req, res) {
                 }
                 console.log(tarPath + ".tar.gz");
                 console.log(imageExtract);
-                new targz().extract(path.resolve(tarPath + ".tar.gz"), path.resolve(imageExtract));
-                res.send(200);
+                targznorm.decompress({
+                    src: path.resolve(tarPath + ".tar.gz"),
+                    dest: path.resolve(imageExtract),
+                    tar: {
+                        dmode: 755,
+                        fmode: 755
+                    }
+                }, function(err) {
+                    if (err) {
+                        console.log(err);
+                        res.send(500);
+                    } else {
+                        res.send(200);
+                    }
+                });
             });
 
         });
